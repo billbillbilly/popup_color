@@ -11,8 +11,6 @@ const effectController = {
         planeSize: 0.5,
         depth: 1,
         fps: 30,
-        ifTransparent: true,
-        transparency: 0.5,
         freePainting: false,
         squareColor:'ffffff',
         generateMode: ' ',
@@ -27,8 +25,6 @@ const effectController = {
 var targetColor = new THREE.Color('green');
 var originalColor = new THREE.Color('white');
 var colorToWhite  = new THREE.Color('white');
-var ifTransparent = true;
-var transparency = 0.5;
 var freePainting = false;
 var color_reset = false;
 var color_drandom = false;
@@ -78,15 +74,15 @@ function init(){
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.getElementById("webgl").appendChild(renderer.domElement);
   //renderer.render(scene, camera);
-  update(renderer, scene, camera, intX, intZ, interval, matrix, matrixValue, planeDict, plane_size, rotation, ifTransparent, transparency);
+  update(renderer, scene, camera, intX, intZ, interval, matrix, matrixValue, planeDict, plane_size, rotation);
 }
 
-function update(renderer, scene, camera, x, z, inter, pt_matrix, matrix_value, planeDict, size, rotation, ifTrans, trans){
+function update(renderer, scene, camera, x, z, inter, pt_matrix, matrix_value, planeDict, size, rotation){
 	scene.background = backgroundColor;
 	renderer.render(scene,camera);
   raycaster.setFromCamera(mouse, camera);
 	// save image
-	// console.log(getImageData);
+	console.log(getImageData);
 	save(renderer);
 
   var pivot = new THREE.Object3D();
@@ -130,31 +126,26 @@ function update(renderer, scene, camera, x, z, inter, pt_matrix, matrix_value, p
 	plane_size = effectController.planeSize;
 	fps = effectController.fps;
 
-  // modify matrix
-  if (size !== plane_size) {
+  // modify canvas (matrix)
+  if (size != plane_size) {
     size = plane_size;
-    planeDict = populatePlane(pt_matrix, matrixColor, size, ifTransparent, transparency);
+    planeDict = populatePlane(pt_matrix, matrixColor, size);
   };
-  if (x !== intX) {
+  if (x != intX) {
     x = intX;
     [pt_matrix, matrix_value, matrixColor] = resizeMatrix(pt_matrix, matrix_value, matrixColor, x, z, inter);
-    planeDict = populatePlane(pt_matrix, matrixColor, size, ifTransparent);
+    planeDict = populatePlane(pt_matrix, matrixColor, size);
   };
-  if (z !== intZ) {
+  if (z != intZ) {
     z = intZ;
     [pt_matrix, matrix_value, matrixColor] = resizeMatrix(pt_matrix, matrix_value, matrixColor, x, z, inter);
-    planeDict = populatePlane(pt_matrix, matrixColor, size, ifTransparent);
+    planeDict = populatePlane(pt_matrix, matrixColor, size);
   };
-  if (inter !== interval) {
+  if (inter != interval) {
     inter = interval;
     [pt_matrix, matrix_value, matrixColor] = resizeMatrix(pt_matrix, matrix_value, matrixColor, x, z, inter);
-    planeDict = populatePlane(pt_matrix, matrixColor, size, ifTransparent);
+    planeDict = populatePlane(pt_matrix, matrixColor, size);
   };
-  if (ifTrans !== ifTransparent || trans !== effectController.transparency) {
-    ifTransparent = effectController.ifTransparent;
-    transparency = effectController.transparency;
-    planeDict = populatePlane(pt_matrix, matrixColor, size, ifTransparent, transparency);
-  }
 
   matrix_value = updateValue(x, z, matrix_value);
   var depth = effectController.depth;
@@ -209,10 +200,6 @@ function initGUI() {
 	folder1.add(effectController, "height", 5, 100, 1);
 	folder1.add(effectController, "interval", 0, 2, 0.1 );
   folder1.add(effectController, "planeSize", 0, 2, 0.1 );
-  folder1.add(effectController, "transparency", 0, 1, 0.1 );
-  folder1.add(effectController, 'ifTransparent').name('transparent').onChange(function(value) {
-    ifTransparent = value;
-  });
   const folder2 = gui.addFolder('Dynamic parameters');
   folder2.add(effectController, "depth", 1, 20, 0.1);
   folder2.add(effectController, "fps", 1, 30, 1);
@@ -221,7 +208,7 @@ function initGUI() {
     backgroundColor.set(value);
   });
   folder3.add(effectController, 'freePainting').onChange(function(value) {
-    freePainting = value;
+    freePainting = value
   });
   folder3.addColor(effectController, 'squareColor').name('add color').onChange(function(value) {
     if (freePainting) {
@@ -258,7 +245,7 @@ function initGUI() {
 			folder4.addColor(effectController, 'addColor3').name('Color3').onChange(function(value) {
 				add_color3 = new THREE.Color().set(value);
 			});
-		} else if (effectController.generateMode == 'movement') {
+		}else if (effectController.generateMode == 'movement') {
 			if (folder4.children[1] != undefined) {
 				folder4.children[1].domElement.parentElement.removeChild(folder4.children[1].domElement);
 				folder4.children[1].parent.children.splice(folder4.children[1].parent.children.indexOf(folder4.children[1]), 1);
@@ -275,7 +262,7 @@ function initGUI() {
 				folder4.children[1].domElement.parentElement.removeChild(folder4.children[1].domElement);
 				folder4.children[1].parent.children.splice(folder4.children[1].parent.children.indexOf(folder4.children[1]), 1);
 			};
-		} else {
+		}else {
 			if (folder4.children[1] != undefined) {
 				folder4.children[1].domElement.parentElement.removeChild(folder4.children[1].domElement);
 				folder4.children[1].parent.children.splice(folder4.children[1].parent.children.indexOf(folder4.children[1]), 1);
@@ -354,25 +341,22 @@ function onMouseMove(event) {
   };
 }
 
-// function getBox(x,y,z){
-//   var geometry = new THREE.BoxGeometry(x,y,z)
-//   var material = new THREE.MeshBasicMaterial({
-//     color:0x00ff00,
-//   });
-//   var mesh = new THREE.Mesh(geometry, material);
-//   return mesh
-// }
+function getBox(x,y,z){
+  var geometry = new THREE.BoxGeometry(x,y,z)
+  var material = new THREE.MeshBasicMaterial({
+    color:0x00ff00,
+  });
+  var mesh = new THREE.Mesh(geometry, material);
+  return mesh
+}
 
-function getPlane(size, color, ifTransparent, transparency){
+function getPlane(size, color){
   var geometry = new THREE.PlaneGeometry(size, size);
-  var material = new THREE.MeshBasicMaterial(
-    {
-      side:THREE.DoubleSide,
-      transparent: true,
-      // toggle transparency
-      opacity: ifTransparent ? transparency : 1,
-    }
-  );
+  var material = new THREE.MeshBasicMaterial({
+    side:THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.4
+  });
   material.color = color;
   var mesh = new THREE.Mesh(geometry, material);
   return mesh
@@ -436,12 +420,12 @@ function resizeMatrix(matrix, value, color, x, z, interval){
   return [dict, dictValue, dictColor];
 }
 
-function populatePlane(matrix, colorVlaue, size, ifTransparent, transparency){
+function populatePlane(matrix, colorVlaue, size){
   var dict = {};
   for(var key in matrix) {
     var position = matrix[key];
     var color = colorVlaue[key];
-    var plane = getPlane(size, color, ifTransparent, transparency);
+    var plane = getPlane(size, color);
     plane.position.set(position[0], position[1], position[2]);
     plane.rotation.x = Math.PI/2;
     dict[key] = plane;
@@ -681,6 +665,7 @@ function getImg(getImageData){
 	getImageData = true;
 	return getImageData
 }
+
 function save(renderer) {
   if (getImageData) {
     renderer.domElement.toBlob(function(blob) {
