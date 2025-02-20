@@ -1,5 +1,8 @@
-import * as OrbitControls from './OrbitControls.js';
+// import * as OrbitControls from './OrbitControls.js';
 import { GUI } from './lil-gui.module.min.js';
+import { SVGRenderer } from 'three/addons/renderers/SVGRenderer.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1, 1000);
@@ -70,7 +73,7 @@ function init(){
   camera.lookAt(new THREE.Vector3(0,0,0));
   var renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
   // controls
-  var controls = new THREE.OrbitControls(camera, renderer.domElement);
+  var controls = new OrbitControls( camera, renderer.domElement );
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.getElementById("webgl").appendChild(renderer.domElement);
   //renderer.render(scene, camera);
@@ -81,9 +84,8 @@ function update(renderer, scene, camera, x, z, inter, pt_matrix, matrix_value, p
 	scene.background = backgroundColor;
 	renderer.render(scene,camera);
   raycaster.setFromCamera(mouse, camera);
-	// save image
-	console.log(getImageData);
-	save(renderer);
+	// save(renderer);
+  btnSVGExportClick();
 
   var pivot = new THREE.Object3D();
   pivot.position.set(0,0,0);
@@ -131,17 +133,17 @@ function update(renderer, scene, camera, x, z, inter, pt_matrix, matrix_value, p
     size = plane_size;
     planeDict = populatePlane(pt_matrix, matrixColor, size);
   };
-  if (x != intX) {
+  if (x !== intX) {
     x = intX;
     [pt_matrix, matrix_value, matrixColor] = resizeMatrix(pt_matrix, matrix_value, matrixColor, x, z, inter);
     planeDict = populatePlane(pt_matrix, matrixColor, size);
   };
-  if (z != intZ) {
+  if (z !== intZ) {
     z = intZ;
     [pt_matrix, matrix_value, matrixColor] = resizeMatrix(pt_matrix, matrix_value, matrixColor, x, z, inter);
     planeDict = populatePlane(pt_matrix, matrixColor, size);
   };
-  if (inter != interval) {
+  if (inter !== interval) {
     inter = interval;
     [pt_matrix, matrix_value, matrixColor] = resizeMatrix(pt_matrix, matrix_value, matrixColor, x, z, inter);
     planeDict = populatePlane(pt_matrix, matrixColor, size);
@@ -666,28 +668,45 @@ function getImg(getImageData){
 	return getImageData
 }
 
-function save(renderer) {
-  if (getImageData) {
-    renderer.domElement.toBlob(function(blob) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "image.bmp";
-      a.click();
-      URL.revokeObjectURL(url);
-      getImageData = false;
-      console.log(a.download);
-    }, "image/bmp");
-  }
-}
-// function save(renderer){
-// 	if(getImageData){
-//     var imgData = renderer.domElement.toDataURL("image/png");
-//   	const a = document.createElement("a");
-//   	a.href = imgData.replace(/^data:image\/[^;]/, 'data:application/octet-stream');
-//   	a.download = "image.png";
-// 		a.click();
-//     getImageData = false;
-// 		console.log(a.download);
+// function save(renderer) {
+//   if (getImageData) {
+//     renderer.domElement.toBlob(function(blob) {
+//       const url = URL.createObjectURL(blob);
+//       const a = document.createElement("a");
+//       a.href = url;
+//       a.download = "image.bmp";
+//       a.click();
+//       URL.revokeObjectURL(url);
+//       getImageData = false;
+//       console.log(a.download);
+//     }, "image/bmp");
 //   }
 // }
+
+function btnSVGExportClick() {
+  if (getImageData) {
+    getImageData = false;
+    var rendererSVG = new SVGRenderer();
+    rendererSVG.setSize(window.innerWidth, window.innerHeight);
+    rendererSVG.render(scene, camera);
+    ExportToSVG(rendererSVG, "output.svg");
+  }
+}
+
+function ExportToSVG(rendererSVG, filename) {
+  var XMLS = new XMLSerializer();
+  var svgfile = XMLS.serializeToString(rendererSVG.domElement);
+  var svgData = svgfile;
+  var preface = '<?xml version="1.0" standalone="no"?>\r\n';
+  var svgBlob = new Blob([preface, svgData], {
+    type: "image/svg+xml;charset=utf-8"
+  });
+  var svgUrl = URL.createObjectURL(svgBlob);
+  var downloadLink = document.createElement("a");
+  
+  downloadLink.href = svgUrl;
+  downloadLink.download = filename;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+}
