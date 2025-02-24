@@ -14,6 +14,7 @@ const effectController = {
         planeSize: 0.5,
         depth: 1,
         fps: 30,
+        opacity: 0.5,
         freePainting: false,
         squareColor:'ffffff',
         generateMode: ' ',
@@ -40,6 +41,7 @@ var generate_switch = 'start generate'
 var getImageData = false;
 
 var fps = 30;
+var opacity = 0.5;
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
 
@@ -50,7 +52,7 @@ var interval = 0.5;
 var [matrix, matrixValue, matrixColor] = getMatrix(intX, intZ, interval);
 var plane_size = 0.5;
 // populate planes
-var planeDict = populatePlane(matrix, matrixColor, plane_size);
+var planeDict = populatePlane(matrix, matrixColor, plane_size, opacity);
 var rotation = 0;
 
 window.addEventListener("mousemove", onMouseMove);
@@ -129,24 +131,28 @@ function update(renderer, scene, camera, x, z, inter, pt_matrix, matrix_value, p
 	fps = effectController.fps;
 
   // modify canvas (matrix)
-  if (size != plane_size) {
+  if (size !== plane_size) {
     size = plane_size;
-    planeDict = populatePlane(pt_matrix, matrixColor, size);
+    planeDict = populatePlane(pt_matrix, matrixColor, size, effectController.opacity);
+  };
+  if (opacity !== effectController.opacity) {
+    opacity = effectController.opacity;
+    planeDict = populatePlane(pt_matrix, matrixColor, size, effectController.opacity);
   };
   if (x !== intX) {
     x = intX;
     [pt_matrix, matrix_value, matrixColor] = resizeMatrix(pt_matrix, matrix_value, matrixColor, x, z, inter);
-    planeDict = populatePlane(pt_matrix, matrixColor, size);
+    planeDict = populatePlane(pt_matrix, matrixColor, size, effectController.opacity);
   };
   if (z !== intZ) {
     z = intZ;
     [pt_matrix, matrix_value, matrixColor] = resizeMatrix(pt_matrix, matrix_value, matrixColor, x, z, inter);
-    planeDict = populatePlane(pt_matrix, matrixColor, size);
+    planeDict = populatePlane(pt_matrix, matrixColor, size, effectController.opacity);
   };
   if (inter !== interval) {
     inter = interval;
     [pt_matrix, matrix_value, matrixColor] = resizeMatrix(pt_matrix, matrix_value, matrixColor, x, z, inter);
-    planeDict = populatePlane(pt_matrix, matrixColor, size);
+    planeDict = populatePlane(pt_matrix, matrixColor, size, effectController.opacity);
   };
 
   matrix_value = updateValue(x, z, matrix_value);
@@ -202,6 +208,7 @@ function initGUI() {
 	folder1.add(effectController, "height", 5, 100, 1);
 	folder1.add(effectController, "interval", 0, 2, 0.1 );
   folder1.add(effectController, "planeSize", 0, 2, 0.1 );
+  folder1.add(effectController, "opacity", 0, 1, 0.1 );
   const folder2 = gui.addFolder('Dynamic parameters');
   folder2.add(effectController, "depth", 1, 20, 0.1);
   folder2.add(effectController, "fps", 1, 30, 1);
@@ -343,21 +350,12 @@ function onMouseMove(event) {
   };
 }
 
-function getBox(x,y,z){
-  var geometry = new THREE.BoxGeometry(x,y,z)
-  var material = new THREE.MeshBasicMaterial({
-    color:0x00ff00,
-  });
-  var mesh = new THREE.Mesh(geometry, material);
-  return mesh
-}
-
-function getPlane(size, color){
+function getPlane(size, color, opa){
   var geometry = new THREE.PlaneGeometry(size, size);
   var material = new THREE.MeshBasicMaterial({
     side:THREE.DoubleSide,
     transparent: true,
-    opacity: 0.4
+    opacity: opa
   });
   material.color = color;
   var mesh = new THREE.Mesh(geometry, material);
@@ -422,12 +420,12 @@ function resizeMatrix(matrix, value, color, x, z, interval){
   return [dict, dictValue, dictColor];
 }
 
-function populatePlane(matrix, colorVlaue, size){
+function populatePlane(matrix, colorVlaue, size, opa){
   var dict = {};
   for(var key in matrix) {
     var position = matrix[key];
     var color = colorVlaue[key];
-    var plane = getPlane(size, color);
+    var plane = getPlane(size, color, opa);
     plane.position.set(position[0], position[1], position[2]);
     plane.rotation.x = Math.PI/2;
     dict[key] = plane;
